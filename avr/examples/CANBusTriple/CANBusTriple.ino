@@ -211,24 +211,10 @@ boolean sendMessage( Message msg, CANBus bus ){
 
   int ch = bus.getNextTxBuffer();
 
-  switch( ch ){
-    case 0:
-      bus.load_ff_0( msg.length, msg.frame_id, msg.frame_data );
-      bus.send_0();
-      break;
-    case 1:
-      bus.load_ff_1( msg.length, msg.frame_id, msg.frame_data );
-      bus.send_1();
-      break;
-    case 2:
-      bus.load_ff_2( msg.length, msg.frame_id, msg.frame_data );
-      bus.send_2();
-      break;
-    default:
-      // All TX buffers full
-      return false;
-      break;
-  }
+  if (ch < 0 || ch > 2) return false; // All TX buffers full
+
+  bus.loadFullFrame(ch, msg.length, msg.frame_id, msg.frame_data );
+  bus.transmitBuffer(ch);
 
   digitalWrite( BOOT_LED, LOW );
 
