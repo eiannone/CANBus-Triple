@@ -198,6 +198,7 @@ public:
     void setClkPre(int mode);
 
     // Set RX Filter registers
+    void setFilterMask( int filter0, int mask0, int filter1, int mask1 );
     void setFilter(int, int);
     void clearFilters();
 

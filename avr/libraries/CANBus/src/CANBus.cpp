@@ -238,24 +238,37 @@ int CANBus::getNextTxBuffer()
 }
 
 
+void CANBus::setFilterMask( int filter0, int mask0, int filter1, int mask1 )
+{    
+    // Buffer RXB0 filters and mask
+    byte bReg1 = filter0 >> 3;
+    byte bReg2 = filter0 << 5;
+    this->writeRegister(RXF0SIDH, bReg1, bReg2 );
+    this->writeRegister(RXF1SIDH, bReg1, bReg2 );
+
+    bReg1 = mask0 >> 3;
+    bReg2 = mask0 << 5;    
+    this->writeRegister(RXM0SIDH, bReg1, bReg2 );
+
+    // Buffer RXB1 filters and mask
+    bReg1 = filter1 >> 3;
+    bReg2 = filter1 << 5;
+    this->writeRegister(RXF2SIDH, bReg1, bReg2 );
+    this->writeRegister(RXF3SIDH, bReg1, bReg2 );
+    this->writeRegister(RXF4SIDH, bReg1, bReg2 );
+    this->writeRegister(RXF5SIDH, bReg1, bReg2 );
+
+    bReg1 = mask1 >> 3;
+    bReg2 = mask1 << 5;  
+    this->writeRegister(RXM1SIDH, bReg1, bReg2 );
+}
+
+
 void CANBus::setFilter( int filter0, int filter1 )
 {    
-    byte sidH = filter0 >> 3;
-    byte sidL = filter0 << 5;
-    this->writeRegister(RXF0SIDH, sidH, sidL ); // RXB0
-    this->writeRegister(RXF2SIDH, sidH, sidL ); // RXB1
-
-    sidH = filter1 >> 3;
-    sidL = filter1 << 5;
-    this->writeRegister(RXF1SIDH, sidH, sidL ); // RXB0
-    this->writeRegister(RXF3SIDH, sidH, sidL ); // RXB1
-    this->writeRegister(RXF4SIDH, sidH, sidL ); // RXB1
-    this->writeRegister(RXF5SIDH, sidH, sidL ); // RXB1
-
+    if (filter1 == 0) filter1 = filter0;
     // Set mask to match everything
-    this->writeRegister(RXM0SIDH, 0xFF, 0xE0 );
-    this->writeRegister(RXM1SIDH, 0xFF, 0xE0 );
-
+    this->setFilterMask( filter0, 0xFFE0, filter1, 0xFFE0 );
 }
 
 
