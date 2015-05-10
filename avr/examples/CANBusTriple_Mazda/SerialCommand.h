@@ -285,7 +285,6 @@ void SerialCommand::settingsCall()
       dumpEeprom();
     break;
     case 0x03:
-      // TODO Read from input and store settings
       getAndSaveEeprom();
     break;
     case 0x04:
@@ -315,7 +314,7 @@ void SerialCommand::settingsCall()
 void SerialCommand::setBluetoothFilter(){
 
   byte cmd[5];
-  int bytesRead = getCommandBody( cmd, 5 );
+  getCommandBody( cmd, 5 );
 
   if( cmd[0] >= 0 && cmd[0] <= 3 ){
     btMessageIdFilters[cmd[0]][0] = (cmd[1] << 8)+cmd[2];
@@ -327,8 +326,7 @@ void SerialCommand::setBluetoothFilter(){
 
 void SerialCommand::bitRate(){
   
-  byte cmd[3],
-       bytesRead;
+  byte cmd[3], bytesRead;
 
   bytesRead = getCommandBody( cmd, 3 );
 
@@ -345,11 +343,11 @@ void SerialCommand::bitRate(){
 
 void SerialCommand::canMode(){
   
-  byte cmd[3], bytesRead;
+  byte cmd[2], bytesRead;
 
   bytesRead = getCommandBody( cmd, 2 );
 
-  if(bytesRead == 2)
+  if (bytesRead == 2)
     Settings::setCanMode( cmd[0], cmd[1] );
   
   CANMode mode = Settings::getCanMode( cmd[0] );
@@ -383,48 +381,60 @@ void SerialCommand::canMode(){
 
 void SerialCommand::logCommand()
 {
-  byte cmd[6] = {0};
-  int bytesRead = getCommandBody( cmd, 6 );
-  int busId = cmd[0] - 1;
-
-  if( busId < 0 || busId > 2 ){
+  byte cmd[8] = {0};
+  if (getCommandBody( cmd, 2 ) < 2) {
     activeSerial->write(COMMAND_ERROR);
     return;
   }
-  CANBus bus = busses[busId];
+  int busId = cmd[0];
+
+  if( busId < 1 || busId > 3 ){
+    activeSerial->write(COMMAND_ERROR);
+    return;
+  }
+  CANBus bus = busses[busId - 1];
 
   if( cmd[1] )
-    busLogEnabled |= 1 << busId;
+    busLogEnabled |= 1 << (busId-1);
   else
-    busLogEnabled &= ~(1 << busId);
+    busLogEnabled &= ~(1 << (busId-1));
 
-  // Set filter if we got pids in the command
-  if( bytesRead > 2 ){
-
-    bus.setMode(CONFIGURATION);
-    bus.clearFilters();
-    if( cmd[2] + cmd[3] + cmd[4] + cmd[5] )
-      bus.setFilter( (cmd[2]<<8) + cmd[3], (cmd[4]<<8) + cmd[5] );
-    bus.setMode(Settings::getCanMode(busId));
-
+  bus.setMode(CONFIGURATION);
+  switch(cmd[1]) {
+    case 1:
+      getCommandBody( cmd, 4 );
+      bus.setFilter( (cmd[0] << 8) + cmd[1], (cmd[2] << 8) + cmd[3] );
+      break;
+    case 2:
+    {
+      int bytesRead = getCommandBody( cmd, 8 );
+      int filter1 = (cmd[0] << 8) + cmd[1];
+      int mask1 = (cmd[2] << 8) + cmd[3];
+      int filter2 = (bytesRead > 4)? (cmd[4] << 8) + cmd[5] : filter1;
+      int mask2 = (bytesRead > 6)? (cmd[6] << 8) + cmd[7] : mask1;
+      bus.setFilterMask( filter1, mask1, filter2, mask2 );
+      break;
+    }
+    default:
+      bus.clearFilters();
+      break;
   }
+  bus.setMode(Settings::getCanMode(busId));
 
   activeSerial->write(COMMAND_OK);
   activeSerial->write(NEWLINE);
-
 }
 
 
 void SerialCommand::getAndSaveEeprom()
 {
-
   #define CHUNK_SIZE 32
 
   byte* settings = (byte *) &cbt_settings;
-  byte cmd[CHUNK_SIZE+1];
-  int bytesRead = getCommandBody( cmd, CHUNK_SIZE+2 );
+  byte cmd[CHUNK_SIZE + 2];
+  int bytesRead = getCommandBody( cmd, CHUNK_SIZE + 2 );
 
-  if( bytesRead == CHUNK_SIZE+2 && cmd[CHUNK_SIZE+1] == 0xA1 ){
+  if ( bytesRead == CHUNK_SIZE + 2 && cmd[CHUNK_SIZE+1] == 0xA1 ) {
 
     memcpy( settings+(cmd[0]*CHUNK_SIZE), &cmd[1], CHUNK_SIZE );
 
@@ -437,18 +447,16 @@ void SerialCommand::getAndSaveEeprom()
       activeSerial->println(F("{\"event\":\"eepromSave\", \"result\":\"success\"}"));
     }
 
-  }else{
+  } else {
     activeSerial->print( F("{\"event\":\"eepromData\", \"result\":\"failure\", \"chunk\":\"") );
     activeSerial->print(cmd[0]);
     activeSerial->println(F("\"}"));
   }
-
 }
 
 
 void SerialCommand::getAndSend()
 {
-
   byte cmd[12];
   int bytesRead = getCommandBody( cmd, 12 );
 
@@ -502,7 +510,7 @@ int SerialCommand::getCommandBody( byte* cmd, int length )
 {
   unsigned int i = 0;
 
-  // Loop until requested amount of bytes are sent. Needed for BT latency
+  // Loop until requested amount of bytes are received. Needed for BT latency
   int timeout = COMMAND_TIMEOUT;
   while( i < length ) {
     // Cannot simply use delay() because Android Bluetooth gets corrupted data
@@ -510,7 +518,7 @@ int SerialCommand::getCommandBody( byte* cmd, int length )
       delay(1);
       timeout--;
     }
-    if (timeout == 0) return i;
+    if (timeout < 1) return i;
     cmd[i] = activeSerial->read();
     i++;
   }

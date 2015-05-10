@@ -386,18 +386,18 @@ void SerialCommand::logCommand()
     activeSerial->write(COMMAND_ERROR);
     return;
   }
-  int busId = cmd[0] - 1;
+  int busId = cmd[0];
 
-  if( busId < 0 || busId > 2 ){
+  if( busId < 1 || busId > 3 ){
     activeSerial->write(COMMAND_ERROR);
     return;
   }
-  CANBus bus = busses[busId];
+  CANBus bus = busses[busId - 1];
 
   if( cmd[1] )
-    busLogEnabled |= 1 << busId;
+    busLogEnabled |= 1 << (busId-1);
   else
-    busLogEnabled &= ~(1 << busId);
+    busLogEnabled &= ~(1 << (busId-1));
 
   bus.setMode(CONFIGURATION);
   switch(cmd[1]) {
@@ -405,7 +405,6 @@ void SerialCommand::logCommand()
       getCommandBody( cmd, 4 );
       bus.setFilter( (cmd[0] << 8) + cmd[1], (cmd[2] << 8) + cmd[3] );
       break;
-
     case 2:
     {
       int bytesRead = getCommandBody( cmd, 8 );
@@ -448,7 +447,7 @@ void SerialCommand::getAndSaveEeprom()
       activeSerial->println(F("{\"event\":\"eepromSave\", \"result\":\"success\"}"));
     }
 
-  } else{
+  } else {
     activeSerial->print( F("{\"event\":\"eepromData\", \"result\":\"failure\", \"chunk\":\"") );
     activeSerial->print(cmd[0]);
     activeSerial->println(F("\"}"));
