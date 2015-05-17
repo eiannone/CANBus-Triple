@@ -267,8 +267,8 @@ void CANBus::setFilterMask( int filter0, int mask0, int filter1, int mask1 )
 void CANBus::setFilter( int filter0, int filter1 )
 {    
     if (filter1 == 0) filter1 = filter0;
-    // Set mask to match everything
-    this->setFilterMask( filter0, 0xFFE0, filter1, 0xFFE0 );
+    // Set mask to match all filter bits
+    this->setFilterMask( filter0, 0xFFFF, filter1, 0xFFFF );
 }
 
 
