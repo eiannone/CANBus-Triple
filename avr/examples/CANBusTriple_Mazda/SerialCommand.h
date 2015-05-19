@@ -402,8 +402,10 @@ void SerialCommand::logCommand()
   bus.setMode(CONFIGURATION);
   switch(cmd[1]) {
     case 1:
-      getCommandBody( cmd, 4 );
-      bus.setFilter( (cmd[0] << 8) + cmd[1], (cmd[2] << 8) + cmd[3] );
+      if (getCommandBody( cmd, 4 ) > 0)
+        bus.setFilter( (cmd[0] << 8) + cmd[1], (cmd[2] << 8) + cmd[3] );
+      else 
+        bus.clearFilters();
       break;
     case 2:
     {
