@@ -29,7 +29,7 @@ struct cbt_settings {
   byte placeholder5;
   byte placeholder6;
   byte placeholder7;
-  struct pid pids[8];  // 34bytes x 8 = 272bytes
+  struct pid pids[8];  // 34bytes x 8 pids = 272bytes
   byte padding[220];  // 512bytes - 292 bytes
 } cbt_settings;
 

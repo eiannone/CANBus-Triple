@@ -189,8 +189,8 @@ void SerialCommand::printMessageToSerial( Message msg )
   if ( !(busLogEnabled & flag) ) return;
 
   // Bluetooth rate limiting
-  //if ( activeSerial == &Serial1 && btRateLimit() ) return;
-  
+  if ( activeSerial == &Serial1 && btRateLimit() ) return;
+
   #ifdef JSON_OUT
 
     // Output to serial as json string
