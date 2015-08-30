@@ -588,7 +588,7 @@ void SerialCommand::printChannelDebug(CANBus channel)
   activeSerial->print( channel.readStatus(), HEX );
   activeSerial->print( F("\", \"error\":\""));
   activeSerial->print( channel.readRegister(EFLG), HEX );
-  if( activeSerial == &Serial ) {
+  if ( activeSerial == &Serial ) {
     activeSerial->print( F("\", \"errorText\":\""));
     printEFLG(channel);
   }
