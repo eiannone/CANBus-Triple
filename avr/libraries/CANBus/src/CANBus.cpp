@@ -21,15 +21,18 @@ CANBus::CANBus( int ss, int reset, unsigned int bid, String nameString )
     name = nameString;
 }
 
-CANBus::CANBus( int ss, int reset ){
+CANBus::CANBus( int ss, int reset )
+{
     CANBus( ss, reset, 0, "Default" );
 }
 
-void CANBus::setName( String s ){
+void CANBus::setName( String s )
+{
     name = s;
 }
 
-void CANBus::setBusId( unsigned int n ){
+void CANBus::setBusId( unsigned int n )
+{
     busId = n;
 }
 
@@ -48,9 +51,9 @@ void CANBus::begin()//constructor for initializing can module.
     SPI.setClockDivider(SPI_CLOCK_DIV2);
     SPI.setBitOrder(MSBFIRST);
 
-    digitalWrite(_reset,LOW); /* RESET CAN CONTROLLER*/
+    digitalWrite(_reset, LOW); /* RESET CAN CONTROLLER*/
     delay(50);
-    digitalWrite(_reset,HIGH);
+    digitalWrite(_reset, HIGH);
     delay(50);
 }
 
@@ -140,7 +143,6 @@ case 1000:
 
 bool CANBus::baudConfig(int bitRate)//sets bitrate for CAN node
 {
-
     // Calculate bit timing registers
     byte BRP;
     float TQ;
@@ -221,7 +223,8 @@ bool CANBus::baudConfig(int bitRate)//sets bitrate for CAN node
 #endif
 
 
-void CANBus::bitModify( byte reg, byte value, byte mask  ){
+void CANBus::bitModify( byte reg, byte value, byte mask )
+{
     digitalWrite(_ss, LOW);
     SPI.transfer(BIT_MODIFY);
     SPI.transfer(reg);
@@ -231,8 +234,8 @@ void CANBus::bitModify( byte reg, byte value, byte mask  ){
 }
 
 
-int CANBus::getNextTxBuffer(){
-
+int CANBus::getNextTxBuffer()
+{
     byte stat = this->readStatus();
 
     if( (stat & 0x4) != 0x4 )   return 0;
@@ -271,15 +274,16 @@ void CANBus::setFilter( int filter0, int filter1 ){
 }
 
 
-void CANBus::clearFilters(){
+void CANBus::clearFilters()
+{
     this->writeRegister(RXM0SIDH, 0, 0 );
     this->writeRegister(RXM1SIDH, 0, 0 );
 }
 
 
 // Enable / Disable interrupt pin on message Rx
-void CANBus::setRxInt(bool b){
-
+void CANBus::setRxInt(bool b)
+{
     byte writeVal;
 
     if (b) {
@@ -315,8 +319,8 @@ void CANBus::clearInterrupt(){
 
 
 // Set clock output scaler
-void CANBus::setClkPre(int mode){
-
+void CANBus::setClkPre(int mode)
+{
     byte writeVal;
 
     switch(mode) {
@@ -340,8 +344,8 @@ void CANBus::setClkPre(int mode){
 
 
 //Method added to enable testing in loopback mode.(pcruce_at_igpp.ucla.edu)
-void CANBus::setMode(CANMode mode) { //put CAN controller in one of five modes
-
+void CANBus::setMode(CANMode mode)  //put CAN controller in one of five modes
+{
     byte writeVal;
 
     switch(mode) {
@@ -460,7 +464,7 @@ void CANBus::readDATA_ff_0(byte* length_out,byte *data_out,unsigned short *id_ou
     SPI.transfer(0xFF); //extended id high(unused)
     SPI.transfer(0xFF); //extended id low(unused)
     len = (SPI.transfer(0xFF) & 0x0F); //data length code
-    for (i = 0;i<len;i++) {
+    for (i = 0; i < len; i++) {
         data_out[i] = SPI.transfer(0xFF);
     }
     digitalWrite(_ss, HIGH);
@@ -470,8 +474,8 @@ void CANBus::readDATA_ff_0(byte* length_out,byte *data_out,unsigned short *id_ou
 }
 
 
-void CANBus::readDATA_ff_1(byte* length_out,byte *data_out,unsigned short *id_out){
-
+void CANBus::readDATA_ff_1(byte* length_out,byte *data_out,unsigned short *id_out)
+{
     byte id_h,id_l,len,i;
 
     digitalWrite(_ss, LOW);

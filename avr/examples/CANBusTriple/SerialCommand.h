@@ -28,9 +28,11 @@ Cmd    Bus id  PID    data 0-7                  length
 
 Set logging output (Filters are optional)
 --------------------------------------------------
-Cmd  Bus  On/Off Message ID 1   Message ID 2
-0x03 0x01 0x01   0x290          0x291   // Set logging on Bus 1 to ON
-0x03 0x01 0x00                          // Set logging on Bus 1 to OFF
+Cmd  Bus  On/Off MsgID 1 MsgID 2
+0x03 0x01 0x01                                // Enable logging on Bus 1 without filtering (log ALL messages)
+0x03 0x01 0x01   0x290   0x291                // Set logging on Bus 1 to ON and filter only messages 0x290 and 0x291
+0x03 0x01 0x00                                // Set logging on Bus 1 to OFF
+
 
 
 Set Bluetooth Message ID filter
@@ -119,7 +121,6 @@ class SerialCommand : public Middleware
 
 byte mwCommandIndex = 0;
 int byteCount = 0;
-unsigned long lastBluetoothRX = millis();
 struct middleware_command mw_cmds[MAX_MW_CALLBACKS];
 
 
@@ -588,7 +589,6 @@ void SerialCommand::registerCommand(byte commandId, Middleware *cbInstance)
   mw_cmds[mwCommandIndex].command = commandId;
   mw_cmds[mwCommandIndex].cbInstance = cbInstance;
   mwCommandIndex++;
-
 }
 
 
@@ -643,7 +643,7 @@ bool SerialCommand::btRateLimit()
     lastBluetoothRX = millis();
     return false;
   } else
-    return true;  
+    return true;
 }
 
 
