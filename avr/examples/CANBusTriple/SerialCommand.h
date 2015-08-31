@@ -184,10 +184,8 @@ void SerialCommand::printMessageToSerial( Message msg )
 {
   // Bus Filter
   byte flag = 0x1 << (msg.busId - 1);
-  if( !(busLogEnabled & flag) ) {
-    return;
-  }
-  
+  if ( !(busLogEnabled & flag) ) return;
+
   // Bluetooth rate limiting
   if ( activeSerial == &Serial1 && btRateLimit() ) return;
 
@@ -383,26 +381,26 @@ void SerialCommand::logCommand()
   byte cmd[6] = {0};
   int bytesRead = getCommandBody( cmd, 6 );
 
-  if( cmd[0] < 1 || cmd[0] > 3 ){
+  int busId = cmd[0];
+
+  if( busId < 1 || busId > 3 ){
     activeSerial->write(COMMAND_ERROR);
     return;
   }
-  CANBus bus = busses[ cmd[0]-1 ];
+  CANBus bus = busses[busId - 1];
 
-  if( cmd[1] )
-    busLogEnabled |= 1 << (cmd[0]-1);
+  if( cmd[1] > 0 )
+    busLogEnabled |= 1 << (busId-1);
   else
-    busLogEnabled &= ~(1 << (cmd[0]-1));
+    busLogEnabled &= ~(1 << (busId-1));
 
   // Set filter if we got pids in the command
-  if( bytesRead > 2 ){
-
+  if( bytesRead > 2 ) {
     bus.setMode(CONFIGURATION);
     bus.clearFilters();
     if( cmd[2] + cmd[3] + cmd[4] + cmd[5] )
       bus.setFilter( (cmd[2]<<8) + cmd[3], (cmd[4]<<8) + cmd[5] );
-    bus.setMode(Settings::getCanMode(cmd[0]));
-
+    bus.setMode(Settings::getCanMode(busId));
   }
 
   activeSerial->write(COMMAND_OK);
