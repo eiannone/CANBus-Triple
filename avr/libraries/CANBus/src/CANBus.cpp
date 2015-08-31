@@ -36,7 +36,8 @@ void CANBus::setBusId( unsigned int n )
     busId = n;
 }
 
-void CANBus::begin()//constructor for initializing can module.
+// Constructor for initializing can module.
+void CANBus::begin()
 {
     // set the slaveSelectPin as an output
     pinMode (SCK,OUTPUT);
@@ -242,7 +243,6 @@ int CANBus::getNextTxBuffer()
     if( (stat & 0x10) != 0x10 ) return 1;
     if( (stat & 0x40) != 0x40 ) return 2;
     return -1;
-
 }
 
 
@@ -299,7 +299,6 @@ void CANBus::setRxInt(bool b)
     }
 
     this->bitModify(CANINTE, writeVal, 0x03);
-
 }
 
 
@@ -345,12 +344,12 @@ void CANBus::setClkPre(int mode)
     }
 
     this->bitModify(CANCTRL, writeVal, 0x03);
-
 }
 
 
-//Method added to enable testing in loopback mode.(pcruce_at_igpp.ucla.edu)
-void CANBus::setMode(CANMode mode)  //put CAN controller in one of five modes
+// Method added to enable testing in loopback mode.(pcruce_at_igpp.ucla.edu)
+// Put CAN controller in one of five modes
+void CANBus::setMode(CANMode mode)  
 {
     byte writeVal;
 
@@ -373,7 +372,6 @@ void CANBus::setMode(CANMode mode)  //put CAN controller in one of five modes
     }
 
     this->bitModify(CANCTRL, writeVal, 0xE0);
-
 }
 
 
@@ -395,10 +393,10 @@ void CANBus::transmitBuffer(int bufferId) // Transmits buffer
             break;
     }
 
-    //delays removed from SEND command(pcruce_at_igpp.ucla.edu)
-    //In testing we found that any lost data was from PC<->Serial Delays,
-    //Not CAN Controller/AVR delays.  Thus removing the delays at this level
-    //allows maximum flexibility and performance.
+    // Delays removed from SEND command(pcruce_at_igpp.ucla.edu)
+    // In testing we found that any lost data was from PC<->Serial Delays,
+    // not CAN Controller/AVR delays. Thus removing the delays at this level
+    // allows maximum flexibility and performance.
     digitalWrite(_ss, LOW);
     SPI.transfer(bufAddr);
     digitalWrite(_ss, HIGH);
@@ -408,47 +406,24 @@ void CANBus::transmitBuffer(int bufferId) // Transmits buffer
 // Extending CAN data read to full frames(pcruce_at_igpp.ucla.edu)
 // It is the responsibility of the user to allocate memory for output.
 // If you don't know what length the bus frames will be, data_out should be 8-bytes
-void CANBus::readDATA_ff_0(byte* length_out, byte *data_out, unsigned short *id_out)
+void CANBus::readFullFrame(byte buffer_id, byte* length_out, byte *data_out, unsigned short *id_out)
 {
     byte len, i;
-    unsigned short id_h,id_l;
+    unsigned short id_h, id_l;
 
     digitalWrite(_ss, LOW);
-    SPI.transfer(READ_RX_BUF_0_ID);
+    SPI.transfer((buffer_id == 0)? READ_RX_BUF_0_ID : READ_RX_BUF_1_ID);
     id_h = (unsigned short) SPI.transfer(0xFF); //id high
     id_l = (unsigned short) SPI.transfer(0xFF); //id low
-    SPI.transfer(0xFF); //extended id high(unused)
-    SPI.transfer(0xFF); //extended id low(unused)
+    SPI.transfer(0xFF); // Extended id high(unused)
+    SPI.transfer(0xFF); // Extended id low(unused)
     len = (SPI.transfer(0xFF) & 0x0F); //data length code
     for (i = 0; i < len; i++) {
         data_out[i] = SPI.transfer(0xFF);
     }
     digitalWrite(_ss, HIGH);
     (*length_out) = len;
-    (*id_out) = ((id_h << 3) + ((id_l & 0xE0) >> 5)); //repack identifier
-
-}
-
-
-void CANBus::readDATA_ff_1(byte* length_out,byte *data_out,unsigned short *id_out)
-{
-    byte id_h,id_l,len,i;
-
-    digitalWrite(_ss, LOW);
-    SPI.transfer(READ_RX_BUF_1_ID);
-    id_h = SPI.transfer(0xFF); //id high
-    id_l = SPI.transfer(0xFF); //id low
-    SPI.transfer(0xFF); //extended id high(unused)
-    SPI.transfer(0xFF); //extended id low(unused)
-    len = (SPI.transfer(0xFF) & 0x0F); //data length code
-    for (i = 0;i<len;i++) {
-        data_out[i] = SPI.transfer(0xFF);
-    }
-    digitalWrite(_ss, HIGH);
-
-    (*length_out) = len;
-    (*id_out) = ((((unsigned short) id_h) << 3) + ((id_l & 0xE0) >> 5)); //repack identifier
-
+    (*id_out) = ((id_h << 3) + ((id_l & 0xE0) >> 5)); // Repack identifier
 }
 
 

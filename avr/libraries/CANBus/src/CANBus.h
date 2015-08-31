@@ -207,34 +207,31 @@ public:
     // Interrupt control register methods
     void setRxInt(bool b);
 
-
     byte readRegister( int addr );
     void writeRegister( int addr, byte value );
     void writeRegister( int addr, byte value, byte value2 );
 
     // byte readTXBNCTRL(int bufferid);
 
-	void transmitBuffer(int bufferId);//request to transmit buffer X
+	void transmitBuffer(int bufferId); // Request to transmit buffer X
 
-
-	// Extending CAN data read to full frames(pcruce_at_igpp.ucla.edu)
+	// Extending CAN data read to full frames (pcruce_at_igpp.ucla.edu)
 	// Data_out should be array of 8-bytes or frame length.
-	void readDATA_ff_0(byte* length_out,byte *data_out,unsigned short *id_out);
-	void readDATA_ff_1(byte* length_out,byte *data_out,unsigned short *id_out);
+    void readFullFrame(byte buffer_id, byte* length_out, byte *data_out, unsigned short *id_out)
 
-	//Adding can to read status register(pcruce_at_igpp.ucla.edu)
-	//can be used to determine whether a frame was received.
-	//(readStatus() & 0x80) == 0x80 means frame in buffer 0
-	//(readStatus() & 0x40) == 0x40 means frame in buffer 1
+	// Adding can to read status register(pcruce_at_igpp.ucla.edu)
+	// Can be used to determine whether a frame was received.
+	// (readStatus() & 0x80) == 0x80 means frame in buffer 0
+	// (readStatus() & 0x40) == 0x40 means frame in buffer 1
     byte readStatus();
 
     // byte readControl();
     // byte readErrorRegister();
 
-	// Extending CAN write to full frame(pcruce_at_igpp.ucla.edu)
-	// Identifier should be a value between 0 and 2^11-1, longer identifiers will be truncated(ie does not support extended frames)
+	// Extending CAN write to full frame (pcruce_at_igpp.ucla.edu)
+	// Identifier should be a value between 0 and 2^11-1, longer identifiers will be truncated
+    // (i.e. does not support extended frames)
 	void loadFullFrame(byte bufferId, byte length, unsigned short identifier, byte *data);
-
 };
 
 #endif

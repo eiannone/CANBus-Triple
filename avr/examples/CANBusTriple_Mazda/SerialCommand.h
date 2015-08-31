@@ -608,7 +608,6 @@ void SerialCommand::registerCommand(byte commandId, Middleware *cbInstance)
   mw_cmds[mwCommandIndex].command = commandId;
   mw_cmds[mwCommandIndex].cbInstance = cbInstance;
   mwCommandIndex++;
-
 }
 
 
@@ -643,7 +642,6 @@ void SerialCommand::dumpEeprom()
   }
 
   activeSerial->println(F("\"}"));
-
 }
 
 
