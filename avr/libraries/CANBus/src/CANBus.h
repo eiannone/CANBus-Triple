@@ -198,6 +198,8 @@ public:
     void setClkPre(int mode);
 
     // Set RX Filter registers
+    void setMask( int rxBufferId, int mask );
+    void setFilterSingle( int rxFilterId, int filter );
     void setFilterMask( int filter0, int mask0, int filter1, int mask1 );
     void setFilter(int, int);
     void clearFilters();
@@ -205,11 +207,11 @@ public:
     int getNextTxBuffer();
 
     // Interrupt control register methods
-    void setRxInt(bool b);
+    void setRxInt(bool enable);
 
     byte readRegister( int addr );
     void writeRegister( int addr, byte value );
-    void writeRegister( int addr, byte value, byte value2 );
+    void writeRegister11bit( int addr, int value );
 
     // byte readTXBNCTRL(int bufferid);
 
@@ -217,7 +219,7 @@ public:
 
 	// Extending CAN data read to full frames (pcruce_at_igpp.ucla.edu)
 	// Data_out should be array of 8-bytes or frame length.
-    void readFullFrame(byte buffer_id, byte* length_out, byte *data_out, unsigned short *id_out)
+    void readFullFrame(byte buffer_id, byte* length_out, byte *data_out, unsigned short *id_out);
 
 	// Adding can to read status register(pcruce_at_igpp.ucla.edu)
 	// Can be used to determine whether a frame was received.
