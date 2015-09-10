@@ -39,14 +39,14 @@ void CANBus::setBusId( unsigned int n )
 // Constructor for initializing can module.
 void CANBus::begin()
 {
-    // set the slaveSelectPin as an output
+    // Set the slaveSelectPin as an output
     pinMode (SCK,OUTPUT);
     pinMode (MISO,INPUT);
     pinMode (MOSI, OUTPUT);
     pinMode (_ss, OUTPUT);
     pinMode (_reset,OUTPUT);
 
-    // initialize SPI:
+    // Initialize SPI:
     SPI.begin();
     SPI.setDataMode(SPI_MODE0);
     SPI.setClockDivider(SPI_CLOCK_DIV2);
@@ -70,78 +70,69 @@ void CANBus::reset()//constructor for initializing can module.
 #ifdef OLD_BAUD
 bool CANBus::baudConfig(int bitRate)//sets bitrate for CAN node
 {
-    byte config0, config1, config2;
+    byte config1, config2, config3;
 
-    switch (bitRate)
-    {
-case 10:
-        config0 = 0x31;
-        config1 = 0xB8;
-        config2 = 0x05;
-        break;
-
-case 20:
-        config0 = 0x18;
-        config1 = 0xB8;
-        config2 = 0x05;
-        break;
-
-case 50:
-        config0 = 0x09;
-        config1 = 0xB8;
-        config2 = 0x05;
-        break;
-
-case 83:
-        config0 = 0x03;
-        config1 = 0xBE;
-        config2 = 0x07;
-        break;
-
-case 100:
-        config0 = 0x04;
-        config1 = 0xB8;
-        config2 = 0x05;
-        break;
-
-case 125:
-        config0 = 0x03;
-        config1 = 0xB8;
-        config2 = 0x05;
-        break;
-
-case 250:
-        config0 = 0x01;
-        config1 = 0xB8;
-        config2 = 0x05;
-        break;
-
-case 500:
-        config0 = 0x00;
-        config1 = 0xB8;
-        config2 = 0x05;
-        break;
-case 1000:
-    //1 megabit mode added by Patrick Cruce(pcruce_at_igpp.ucla.edu)
-    //Faster communications enabled by shortening bit timing phases(3 Tq. PS1 & 3 Tq. PS2) Note that this may exacerbate errors due to synchronization or arbitration.
-    config0 = 0x80;
-    config1 = 0x90;
-    config2 = 0x02;
+    switch (bitRate) {
+        case 10:
+            config1 = 0x31;
+            config2 = 0xB8;
+            config3 = 0x05;
+            break;
+        case 20:
+            config1 = 0x18;
+            config2 = 0xB8;
+            config3 = 0x05;
+            break;
+        case 50:
+            config1 = 0x09;
+            config2 = 0xB8;
+            config3 = 0x05;
+            break;
+        case 83:
+            config1 = 0x03;
+            config2 = 0xBE;
+            config3 = 0x07;
+            break;
+        case 100:
+            config1 = 0x04;
+            config2 = 0xB8;
+            config3 = 0x05;
+            break;
+        case 125:
+            config1 = 0x03;
+            config2 = 0xB8;
+            config3 = 0x05;
+            break;
+        case 250:
+            config1 = 0x01;
+            config2 = 0xB8;
+            config3 = 0x05;
+            break;
+        case 500:
+            config1 = 0x00;
+            config2 = 0xB8;
+            config3 = 0x05;
+            break;
+        case 1000:
+            // 1 megabit mode added by Patrick Cruce(pcruce_at_igpp.ucla.edu)
+            // Faster communications enabled by shortening bit timing phases(3 Tq. PS1 & 3 Tq. PS2) 
+            // Note that this may exacerbate errors due to synchronization or arbitration.
+            config1 = 0x80;
+            config2 = 0x90;
+            config3 = 0x02;
+            break;
     }
 
-    this->writeRegister(CNF1, config0);
-    this->writeRegister(CNF2, config1);
-    this->writeRegister(CNF3, config2);
+    this->writeRegister(CNF1, config1);
+    this->writeRegister(CNF2, config2);
+    this->writeRegister(CNF3, config3);
 
-  return true;
+    return true;
 }
-
-
 #else
 /*
 *   New Baud rate calculation
 */
-
 bool CANBus::baudConfig(int bitRate)//sets bitrate for CAN node
 {
     // Calculate bit timing registers
@@ -217,9 +208,7 @@ bool CANBus::baudConfig(int bitRate)//sets bitrate for CAN node
     Serial.print("CNT3 ");
     Serial.println(config3, BIN);
     */
-
     return true;
-
 }
 #endif
 
@@ -567,18 +556,18 @@ void CANBus::loadFullFrame(byte bufferId, byte length, unsigned short identifier
             break;
     }
 
-    //generate id bytes before SPI write
+    // Generate id bytes before SPI write
     id_high = (byte) (identifier >> 3);
     id_low = (byte) ((identifier << 5) & 0x00E0);
 
     digitalWrite(_ss, LOW);
     SPI.transfer(bufAddr);
-    SPI.transfer(id_high); //identifier high bits
-    SPI.transfer(id_low); //identifier low bits
-    SPI.transfer(0x00); //extended identifier registers(unused)
+    SPI.transfer(id_high); // Identifier high bits
+    SPI.transfer(id_low); // Identifier low bits
+    SPI.transfer(0x00); // Extended identifier registers (unused)
     SPI.transfer(0x00);
     SPI.transfer(length);
-    for (i = 0; i < length; i++) { //load data buffer
+    for (i = 0; i < length; i++) { // Load data buffer
         SPI.transfer(data[i]);
     }
     digitalWrite(_ss, HIGH);
