@@ -113,7 +113,6 @@ void setup()
     busses[b].setMode(cbt_settings.busCfg[b].mode);
   }
 
-  CANBus1.bitModify(CNF2, 0x20, 0x20); // Enable wake-up filter
   // attachInterrupt(CAN1INT, handleInterrupt1, LOW);
   // attachInterrupt(CAN2INT, handleInterrupt2, LOW);
   // attachInterrupt(CAN3INT, handleInterrupt3, LOW);
