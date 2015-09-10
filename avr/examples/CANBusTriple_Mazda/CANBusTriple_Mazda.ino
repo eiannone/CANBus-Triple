@@ -150,15 +150,15 @@ void handleInterrupt3(){}
 void loop() 
 {
   // Run all middleware ticks
-  for(int i=0; i<=activeMiddlewareLength-1; i++)
+  for(int i = 0; i <= activeMiddlewareLength - 1; i++)
     activeMiddleware[i]->tick();
 
-  if( digitalRead(CAN1INT_D) == 0 ) readBus(CANBus1);
-  if( digitalRead(CAN2INT_D) == 0 ) readBus(CANBus2);
-  if( digitalRead(CAN3INT_D) == 0 ) readBus(CANBus3);
+  if ( digitalRead(CAN1INT_D) == 0 ) readBus(CANBus1);
+  if ( digitalRead(CAN2INT_D) == 0 ) readBus(CANBus2);
+  if ( digitalRead(CAN3INT_D) == 0 ) readBus(CANBus3);
 
   // Process message stack
-  if( !readQueue.isEmpty() && !writeQueue.isFull() ){
+  if ( !readQueue.isEmpty() && !writeQueue.isFull() ) {
     processMessage( readQueue.pop() );
   }
 
@@ -170,7 +170,7 @@ void loop()
 
     success = sendMessage( msg, channel );
 
-    if( !success ){
+    if ( !success ){
       // TX Failure, add back to queue
       writeQueue.push(msg);
     }

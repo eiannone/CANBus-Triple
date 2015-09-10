@@ -184,18 +184,25 @@ public:
     void setName(String s);
     void setBusId(unsigned int n);
 
-    void begin();                       //sets up MCP2515
-    bool baudConfig(int bitRate);       //sets up baud
+    void begin();                       // Sets up MCP2515
+    bool baudConfig(int bitRate);       // Sets up baud
 
     void reset();                       // Send MCP2515 Reset command
 
-    void bitModify( byte reg, byte value, byte mask  );
+    void bitModify( byte reg, byte value, byte mask );
 
-	//Method added to enable testing in loopback mode.(pcruce_at_igpp.ucla.edu)
-	void setMode(CANMode mode) ;        //put CAN controller in one of five modes
+	// Method added to enable testing in loopback mode (pcruce_at_igpp.ucla.edu)
+	void setMode(CANMode mode);         // Put CAN controller in one of five modes
 
     // Method to send CLKPRE (Clock output scaler) 1,2,4,8 available values.
     void setClkPre(int mode);
+
+    // Enable/Disable interrupt pin on CAN bus activity (while in SLEEP mode)
+    void setWakeupInt(bool enable);
+
+    // Enable/Disable Wakeup filter 
+    // (prevents the device from waking up due to short glitches on the CAN bus lines)
+    void setWakeupFilter(bool enable);
 
     // Set RX Filter registers
     void setMask( int rxBufferId, int mask );

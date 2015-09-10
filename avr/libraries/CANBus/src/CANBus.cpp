@@ -306,6 +306,13 @@ void CANBus::setRxInt(bool enable)
 }
 
 
+// Enable / Disable interrupt pin on CAN bus activity (while in SLEEP mode)
+void CANBus::setWakeupInt(bool enable)
+{
+    this->bitModify(CANINTE, enable? 0x40 : 0x00, 0x40);
+}
+
+
 // Clear interrupts
 /*
 void CANBus::clearInterrupt(){
@@ -322,7 +329,6 @@ void CANBus::clearInterrupt(){
     SPI.transfer(mask);
     SPI.transfer(writeVal);
     digitalWrite(_ss, HIGH);
-
 }
 */
 
@@ -376,6 +382,12 @@ void CANBus::setMode(CANMode mode)
     }
 
     this->bitModify(CANCTRL, writeVal, 0xE0);
+}
+
+
+void CANBus::setWakeupFilter(bool enable)
+{
+    this->bitModify(CNF3, enable? 0x40 : 0x00, 0x40);
 }
 
 
