@@ -220,8 +220,6 @@ public:
     void writeRegister( int addr, byte value );
     void writeRegister11bit( int addr, int value );
 
-    // byte readTXBNCTRL(int bufferid);
-
 	void transmitBuffer(int bufferId); // Request to transmit buffer X
 
 	// Extending CAN data read to full frames (pcruce_at_igpp.ucla.edu)
