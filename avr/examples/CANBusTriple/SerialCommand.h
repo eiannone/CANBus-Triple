@@ -29,12 +29,13 @@ Cmd    Bus id  PID  Data 0-7                 Length
 Enable/disable logging over serial (filters are optional)
 --------------------------------------------------
 Cmd  Bus  On/Off MsgId1 MsgId2
-0x03 0x01 0x01                    // Enable logging on bus 1 for ALL messages
+0x03 0x01 0x01                    // Enable logging on bus 1 (do not touch current filter)
 0x03 0x01 0x01   0x290  0x291     // Enable logging on bus 1 and filter only messages 0x290 and 0x291
-0x03 0x01 0x00                    // Set logging on bus 1 to OFF
+0x03 0x01 0x00                    // Disable logging on bus 1
 
                  MsgId1 Mask1 MsgId2 Mask2
 0x03 0x01 0x02   0x290  0xFFF 0x400  0xFF0  // Enable logging on Bus 1 filter messages 0x290 and 0x40* (0 in mask is a wildcard)
+0x03 0x01 0x02   0x000  0x000               // Enable logging on Bus 1 for ALL messages
 
 
 Set Bluetooth Message ID filter
@@ -387,13 +388,12 @@ void SerialCommand::logCommand()
     else
         busLogEnabled &= ~(1 << (busId-1));
 
+    // Set optional filter    
     bus.setMode(CONFIGURATION);
     switch(cmd[1]) {
         case 1:
-            if (getCommandBody( cmd, 4 ) > 0)
-                bus.setFilter( (cmd[0] << 8) + cmd[1], (cmd[2] << 8) + cmd[3] );
-            else 
-                bus.disableFilters();
+            if (getCommandBody(cmd, 4) > 0)
+                bus.setFilter((cmd[0] << 8) + cmd[1], (cmd[2] << 8) + cmd[3]);
             break;
         case 2:
         {
@@ -402,12 +402,9 @@ void SerialCommand::logCommand()
             int mask1 = (cmd[2] << 8) + cmd[3];
             int filter2 = (bytesRead > 4)? (cmd[4] << 8) + cmd[5] : filter1;
             int mask2 = (bytesRead > 6)? (cmd[6] << 8) + cmd[7] : mask1;
-            bus.setFilterMask( filter1, mask1, filter2, mask2 );
+            bus.setFilterMask(filter1, mask1, filter2, mask2);
             break;
         }
-        default:
-            bus.disableFilters();
-            break;
     }
     bus.setMode(Settings::getCanMode(busId));
 
