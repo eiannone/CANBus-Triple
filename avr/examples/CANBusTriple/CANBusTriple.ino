@@ -109,7 +109,7 @@ void setup()
     busses[b].baudConfig(cbt_settings.busCfg[b].baud);
     busses[b].setRxInt(true);
     busses[b].bitModify(RXB0CTRL, 0x04, 0x04); // Set buffer rollover enabled
-    busses[b].clearFilters();
+    busses[b].disableFilters();
     busses[b].setMode(cbt_settings.busCfg[b].mode);
   }
 

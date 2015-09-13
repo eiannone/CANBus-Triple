@@ -209,7 +209,7 @@ public:
     void setFilterSingle( int rxFilterId, int filter );
     void setFilterMask( int filter0, int mask0, int filter1, int mask1 );
     void setFilter(int, int);
-    void clearFilters();
+    void disableFilters();
 
     int getNextTxBuffer();
 
@@ -226,7 +226,7 @@ public:
 	// Data_out should be array of 8-bytes or frame length.
     void readFullFrame(byte buffer_id, byte* length_out, byte *data_out, unsigned short *id_out);
 
-	// Adding can to read status register(pcruce_at_igpp.ucla.edu)
+	// Adding can to read status register (pcruce_at_igpp.ucla.edu)
 	// Can be used to determine whether a frame was received.
 	// (readStatus() & 0x80) == 0x80 means frame in buffer 0
 	// (readStatus() & 0x40) == 0x40 means frame in buffer 1

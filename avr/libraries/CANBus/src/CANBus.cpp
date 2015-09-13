@@ -292,7 +292,7 @@ void CANBus::setFilter( int filter0, int filter1 )
 }
 
 
-void CANBus::clearFilters()
+void CANBus::disableFilters()
 {
     this->setMask(0, 0);
     this->setMask(1, 0);

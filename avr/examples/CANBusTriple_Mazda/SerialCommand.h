@@ -393,7 +393,7 @@ void SerialCommand::logCommand()
             if (getCommandBody( cmd, 4 ) > 0)
                 bus.setFilter( (cmd[0] << 8) + cmd[1], (cmd[2] << 8) + cmd[3] );
             else 
-                bus.clearFilters();
+                bus.disableFilters();
             break;
         case 2:
         {
@@ -406,7 +406,7 @@ void SerialCommand::logCommand()
             break;
         }
         default:
-            bus.clearFilters();
+            bus.disableFilters();
             break;
     }
     bus.setMode(Settings::getCanMode(busId));

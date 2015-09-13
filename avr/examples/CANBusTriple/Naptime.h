@@ -133,7 +133,7 @@ void Naptime::tick()
             delay(2);
             // Remove Bus 1 filter
             busses[0].setMode(CONFIGURATION);
-            busses[0].clearFilters();
+            busses[0].disableFilters();
         }
 
         busses[i].bitModify( CANCTRL, controllerModes[i], 0xE0 );
