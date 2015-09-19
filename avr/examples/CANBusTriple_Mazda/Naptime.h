@@ -10,8 +10,8 @@
 class Naptime : public Middleware
 {
 public:
-    Naptime(int, SerialCommand *serialCmd);
-    Naptime(SerialCommand *serialCmd);    
+    Naptime(int resetMsgId);
+    Naptime();    
     void tick();
     Message process( Message msg );
     void reset();
@@ -25,13 +25,9 @@ private:
 };
 
 
-Naptime::Naptime(int resetMsgId, SerialCommand *serialCmd) : enabled(true), timer(0), resetId(resetMsgId)
-{
-    // Set a command callback to enable disable sleep (4E01 on 4E00 off)
-    serialCmd->registerCommand(0x4E, this);
-}
+Naptime::Naptime(int resetMsgId) : enabled(true), timer(0), resetId(resetMsgId) {}
 
-Naptime::Naptime(SerialCommand *serialCmd) : Naptime(0, serialCmd) {}
+Naptime::Naptime() : Naptime(0) {}
 
 void Naptime::commandHandler(byte* bytes, int length)
 {

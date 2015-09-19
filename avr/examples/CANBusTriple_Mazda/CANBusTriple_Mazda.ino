@@ -16,7 +16,7 @@
 #ifdef HAS_AUTOMATIC_VERSIONING
     #include "_Version.h"
 #else
-    #define BUILD_VERSION "0.5.2"
+    #define BUILD_VERSION "0.6.0"
 #endif
 // #define SLEEP_ENABLE
 
@@ -36,13 +36,8 @@ CANBus busses[] = { CANBus1, CANBus2, CANBus3 };
 #include "MazdaLED.h"
 #include "Naptime.h"
 
-// #include "SelfTest.h"
-
-
-byte rx_status;
 QueueArray<Message> readQueue;
 QueueArray<Message> writeQueue;
-
 
 /*
 *  Middleware Setup
@@ -50,14 +45,19 @@ QueueArray<Message> writeQueue;
 */
 SerialCommand *serialCommand = new SerialCommand( &writeQueue );
 ServiceCall *serviceCall = new ServiceCall( &writeQueue );
-MazdaLED *mazdaLed = new MazdaLED( &writeQueue, serialCommand );
+#ifdef SLEEP_ENABLE
+Naptime *naptime = new Naptime(0x0472);
+#endif
+MazdaLED *mazdaLed = new MazdaLED( &writeQueue );
 
 Middleware *activeMiddleware[] = {
   serialCommand,
   new ChannelSwap(),
   mazdaLed,
   serviceCall,
-  new Naptime(0x0472, serialCommand),
+#ifdef SLEEP_ENABLE
+  naptime,
+#endif
   new MazdaWheelButton(mazdaLed, serviceCall)
 };
 int activeMiddlewareLength = (int)( sizeof(activeMiddleware) / sizeof(activeMiddleware[0]) );
@@ -71,6 +71,12 @@ void setup()
   /*
   *  Middleware Settings
   */
+#ifdef SLEEP_ENABLE
+  // Set a command callback to enable disable sleep (4E01 on 4E00 off)
+  serialCommand->registerCommand(0x4E, 1, naptime);
+#endif
+  serialCommand->registerCommand(0x16, 64, mazdaLed);
+
   mazdaLed->enabled = cbt_settings.displayEnabled;
   serviceCall->setFilterPids();
 
@@ -120,10 +126,6 @@ void setup()
     busses[b].setMode(cbt_settings.busCfg[b].mode);
   }
 
-  // attachInterrupt(CAN1INT, handleInterrupt1, LOW);
-  // attachInterrupt(CAN2INT, handleInterrupt2, LOW);
-  // attachInterrupt(CAN3INT, handleInterrupt3, LOW);
-
   for(int l = 0; l < 5; l++) {
     digitalWrite( BOOT_LED, HIGH );
     delay(50);
@@ -133,15 +135,6 @@ void setup()
 
   // wdt_enable(WDTO_1S);
 }
-
-
-/*
-*  Interrupt Handlers
-*  Currently unused - loop() method will poll for logic low before a read
-*/
-void handleInterrupt1(){}
-void handleInterrupt2(){}
-void handleInterrupt3(){}
 
 
 /*
@@ -157,23 +150,21 @@ void loop()
   if ( digitalRead(CAN2INT_D) == 0 ) readBus(CANBus2);
   if ( digitalRead(CAN3INT_D) == 0 ) readBus(CANBus3);
 
-  // Process message stack
-  if ( !readQueue.isEmpty() && !writeQueue.isFull() ) {
-    processMessage( readQueue.pop() );
+  // Process received CAN message through middleware
+  if (!readQueue.isEmpty()) {
+    Message msg = readQueue.pop();
+    for(int i = 0; i <= activeMiddlewareLength - 1; i++) msg = activeMiddleware[i]->process(msg);
+    if (msg.dispatch && !writeQueue.isFull()) writeQueue.push(msg);
   }
 
-  boolean success = true;
-  while( !writeQueue.isEmpty() && success ) {
+  boolean error = false;
+  while(!writeQueue.isEmpty() && !error) {
 
     Message msg = writeQueue.pop();
-    CANBus channel = busses[msg.busId-1];
+    error = !sendMessage(msg, busses[msg.busId - 1]);
 
-    success = sendMessage( msg, channel );
-
-    if ( !success ){
-      // TX Failure, add back to queue
-      writeQueue.push(msg);
-    }
+    // When TX Failure, add back to queue
+    if (error) writeQueue.push(msg);
   }
 
   // Pet the dog
@@ -189,16 +180,13 @@ boolean sendMessage( Message msg, CANBus bus )
 {
   if( msg.dispatch == false ) return true;
 
-  digitalWrite( BOOT_LED, HIGH );
-
   int ch = bus.getNextTxBuffer();
-
   if (ch < 0 || ch > 2) return false; // All TX buffers full
 
+  digitalWrite(BOOT_LED, HIGH);
   bus.loadFullFrame(ch, msg.length, msg.frame_id, msg.frame_data );
   bus.transmitBuffer(ch);
-
-  digitalWrite( BOOT_LED, LOW );
+  digitalWrite(BOOT_LED, LOW);
 
   return true;
 }
@@ -209,46 +197,20 @@ boolean sendMessage( Message msg, CANBus bus )
 */
 void readBus( CANBus bus )
 {
-  // Abort if readQueue is full
-  if( readQueue.isFull() ) return;
-
-  rx_status = bus.readStatus();
-
-  // Check buffer RX0
-  if( (rx_status & 0x1) == 0x1 ){
-    Message msg;
-    msg.busStatus = rx_status;
-    msg.busId = bus.busId;
-    bus.readFullFrame(0, &msg.length, msg.frame_data, &msg.frame_id );
-    readQueue.push(msg);
-  }
-
-  // Abort if readQueue is full
-  if( readQueue.isFull() ) return;
-
-  // Check buffer RX1
-  if( (rx_status & 0x2) == 0x2 ) {
-    Message msg;
-    msg.busStatus = rx_status;
-    msg.busId = bus.busId;
-    bus.readFullFrame(1, &msg.length, msg.frame_data, &msg.frame_id );
-    readQueue.push(msg);
-  }
+  byte rx_status = bus.readStatus();
+  if (rx_status & 0x1) readMsgFromBuffer(bus, 0, rx_status);
+  if (rx_status & 0x2) readMsgFromBuffer(bus, 1, rx_status);
 }
 
 
-/*
-*  Process received CAN message through middleware
-*/
-void processMessage( Message msg )
+void readMsgFromBuffer(CANBus bus, byte bufferId, byte rx_status)
 {
-  for(int i=0; i<=activeMiddlewareLength-1; i++)
-    msg = activeMiddleware[i]->process( msg );
+  // Abort if readQueue is full
+  if (readQueue.isFull()) return;
 
-  // For self test slave
-  // msg.frame_id += 0x08;
-  // msg.dispatch = true;
-
-  if( msg.dispatch == true )
-    writeQueue.push( msg );
+  Message msg;
+  msg.busStatus = rx_status;
+  msg.busId = bus.busId;
+  bus.readFullFrame(bufferId, &msg.length, msg.frame_data, &msg.frame_id );
+  readQueue.push(msg);  
 }

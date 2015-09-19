@@ -75,6 +75,7 @@ TODO: Implement this ^^^
 
 struct middleware_command {
     byte command;
+    int dataLength;
     // void (Middleware::*cb)(byte[], int);
     Middleware *cbInstance;
 };
@@ -89,7 +90,7 @@ public:
     void commandHandler(byte* bytes, int length);
     Stream* activeSerial;
     void printMessageToSerial(Message msg);
-    void registerCommand(byte commandId, Middleware *cbInstance);
+    void registerCommand(byte commandId, int dataLength, Middleware *cbInstance);
     void resetToBootloader();
 private:
     int freeRam();
@@ -112,8 +113,6 @@ private:
     char btMessageIdFilters[][2];
     boolean passthroughMode;
     byte busLogEnabled;
-    Message newMessage;
-    byte buffer[];
     void printEFLG(CANBus);
     int byteCount;
     void btDelay();
@@ -207,8 +206,8 @@ void SerialCommand::processCommand(int command)
             for(int i = 0; i < mwCommandIndex; i++ ){
                 if( mw_cmds[i].command != command ) continue;
 
-                byte cmd[64];
-                int bytesRead = getCommandBody( cmd, 64 );
+                byte cmd[mw_cmds[i].dataLength];
+                int bytesRead = getCommandBody( cmd, mw_cmds[i].dataLength );
                 delay(1);
                 // (*mw_cmds[i].cb)( cmd, bytesRead );
                 mw_cmds[i].cbInstance->commandHandler(cmd, bytesRead);
@@ -230,19 +229,19 @@ void SerialCommand::printMessageToSerial( Message msg )
 
     // Output to serial as json string
     activeSerial->print(F("{\"packet\": {\"status\":\""));
-    activeSerial->print( msg.busStatus,HEX);
+    activeSerial->print( msg.busStatus, HEX);
     activeSerial->print(F("\",\"channel\":\""));
     activeSerial->print( busses[msg.busId-1].name );
     activeSerial->print(F("\",\"length\":\""));
-    activeSerial->print(msg.length,HEX);
+    activeSerial->print(msg.length, HEX);
     activeSerial->print(F("\",\"id\":\""));
-    activeSerial->print(msg.frame_id,HEX);
+    activeSerial->print(msg.frame_id, HEX);
     activeSerial->print(F("\",\"timestamp\":\""));
-    activeSerial->print(millis(),DEC);
+    activeSerial->print(millis(), DEC);
     activeSerial->print(F("\",\"payload\":[\""));
-    for (int i=0; i<8; i++) {
-        activeSerial->print(msg.frame_data[i],HEX);
-        if( i<7 ) activeSerial->print(F("\",\""));
+    for (int i = 0; i < 8; i++) {
+        activeSerial->print(msg.frame_data[i], HEX);
+        if(i < 7) activeSerial->print(F("\",\""));
     }
     activeSerial->print(F("\"]}}"));
     activeSerial->println();
@@ -254,7 +253,7 @@ void SerialCommand::printMessageToSerial( Message msg )
     activeSerial->write( msg.frame_id >> 8 );
     activeSerial->write( msg.frame_id );
 
-    for (int i=0; i<8; i++) activeSerial->write(msg.frame_data[i]);
+    for (int i = 0; i < 8; i++) activeSerial->write(msg.frame_data[i]);
 
     activeSerial->write( msg.length );
     activeSerial->write( msg.busStatus );
@@ -492,9 +491,8 @@ void SerialCommand::bluetooth()
 
 int SerialCommand::getCommandBody( byte* cmd, int length )
 {
-    unsigned int i = 0;
-
     // Loop until requested amount of bytes are received. Needed for BT latency
+    int i = 0;    
     int timeout = COMMAND_TIMEOUT;
     while( i < length ) {
         // Cannot simply use delay() because Android Bluetooth gets corrupted data
@@ -506,7 +504,6 @@ int SerialCommand::getCommandBody( byte* cmd, int length )
         cmd[i] = activeSerial->read();
         i++;
     }
-
     return i;
 }
 
@@ -539,23 +536,23 @@ void SerialCommand::printChannelDebug()
 
 void SerialCommand::printEFLG(CANBus channel) 
 {
-    if (channel.readRegister(EFLG) & 0b00000001)        //EWARN
+    if (channel.readRegister(EFLG) & 0b00000001)        // EWARN
         activeSerial->print( F("Receive Error Warning - TEC or REC >= 96, ") );
-    if (channel.readRegister(EFLG) & 0b00000010)        //RXWAR
+    if (channel.readRegister(EFLG) & 0b00000010)        // RXWAR
         activeSerial->print( F("Receive Error Warning - REC >= 96, ") );
-    if (channel.readRegister(EFLG) & 0b00000100)        //TXWAR
+    if (channel.readRegister(EFLG) & 0b00000100)        // TXWAR
         activeSerial->print( F("Transmit Error Warning - TEX >= 96, ") );
-    if (channel.readRegister(EFLG) & 0b00001000)        //RXEP
+    if (channel.readRegister(EFLG) & 0b00001000)        // RXEP
         activeSerial->print( F("Receive Error Warning - REC >= 128, ") );
-    if (channel.readRegister(EFLG) & 0b00010000)        //TXEP
+    if (channel.readRegister(EFLG) & 0b00010000)        // TXEP
         activeSerial->print( F("Transmit Error Warning - TEC >= 128, ") );
-    if (channel.readRegister(EFLG) & 0b00100000)        //TXBO
+    if (channel.readRegister(EFLG) & 0b00100000)        // TXBO
         activeSerial->print( F("Bus Off - TEC exceeded 255, ") );
-    if (channel.readRegister(EFLG) & 0b01000000)        //RX0OVR
+    if (channel.readRegister(EFLG) & 0b01000000)        // RX0OVR
         activeSerial->print( F("Receive Buffer 0 Overflow, ") );
-    if (channel.readRegister(EFLG) & 0b10000000)        //RX1OVR
+    if (channel.readRegister(EFLG) & 0b10000000)        // RX1OVR
         activeSerial->print( F("Receive Buffer 1 Overflow, ") );
-    if (channel.readRegister(EFLG) ==0)                        //No errors
+    if (channel.readRegister(EFLG) == 0)                // No errors
         activeSerial->print( F("No Errors") ); 
 }
 
@@ -580,12 +577,13 @@ void SerialCommand::printChannelDebug(CANBus channel)
 }
 
 
-void SerialCommand::registerCommand(byte commandId, Middleware *cbInstance)
+void SerialCommand::registerCommand(byte commandId, int dataLength, Middleware *cbInstance)
 {
     // About if we've reached the max number of registered callbacks
     if( mwCommandIndex >= MAX_MW_CALLBACKS ) return;
 
     mw_cmds[mwCommandIndex].command = commandId;
+    mw_cmds[mwCommandIndex].dataLength = dataLength;
     mw_cmds[mwCommandIndex].cbInstance = cbInstance;
     mwCommandIndex++;
 }
@@ -608,8 +606,8 @@ void SerialCommand::dumpEeprom()
 {
     activeSerial->print( F("{\"event\":\"eeprom\", \"data\":\"") );
     
-    // dump eeprom
-    for(int i=0; i<512; i++){
+    // Dump EEPROM
+    for(int i = 0; i < 512; i++){
         uint8_t v = EEPROM.read(i);
         if (v < 0x10) activeSerial->print( "0" );
 
@@ -650,4 +648,6 @@ int SerialCommand::freeRam ()
     return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
 }
 
+
 #endif
+
