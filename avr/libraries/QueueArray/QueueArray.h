@@ -94,7 +94,7 @@ class QueueArray {
     void blink () const;
 
     // the initial size of the queue.
-    static const int initialSize = 2;
+    static const int initialSize = 3;
 
     // the pin number of the on-board led.
     static const int ledPin = 13;
@@ -212,7 +212,7 @@ T QueueArray<T>::pop () {
   if (head == size) head = 0;
 
   // shrink size of array if necessary.
-  if (!isEmpty () && (items <= size / 4))
+  if (!isEmpty () && (items <= size / 6))
     resize (size / 2);
 
   // return the item from the array.
