@@ -16,10 +16,10 @@ public:
     Message process( Message msg );
     void reset();
     static void handleInterrupt();
-    bool enabled;
+    boolean enabled;
     unsigned long timer;
     unsigned short resetId;
-    void commandHandler(byte* bytes, int length);
+    void commandHandler(byte* bytes, int length, Stream* activeSerial);
 private:
 
 };
@@ -29,7 +29,7 @@ Naptime::Naptime(int resetMsgId) : enabled(true), timer(0), resetId(resetMsgId) 
 
 Naptime::Naptime() : Naptime(0) {}
 
-void Naptime::commandHandler(byte* bytes, int length)
+void Naptime::commandHandler(byte* bytes, int length, Stream* activeSerial)
 {
     enabled = bytes[0];
 }

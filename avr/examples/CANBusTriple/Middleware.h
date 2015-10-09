@@ -7,7 +7,7 @@ class Middleware
   public:
     virtual void tick();
     virtual Message process( Message msg );
-    virtual void commandHandler(byte* bytes, int length);
+    virtual void commandHandler(byte* bytes, int length, Stream* activeSerial);
     // boolean enabled;
     Middleware(){};
     ~Middleware(){};

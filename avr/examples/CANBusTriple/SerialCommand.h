@@ -87,17 +87,18 @@ public:
     SerialCommand( QueueArray<Message> *q );
     void tick();
     Message process( Message msg );
-    void commandHandler(byte* bytes, int length);
+    void commandHandler(byte* bytes, int length, Stream* activeSerial);
     Stream* activeSerial;
     void printMessageToSerial(Message msg);
     void registerCommand(byte commandId, int dataLength, Middleware *cbInstance);
     void resetToBootloader();
+
 private:
     int freeRam();
     QueueArray<Message>* mainQueue;
     void printChannelDebug();
     void printChannelDebug(CANBus);
-    void processCommand(int command);
+    void processCommand(byte command);
     int  getCommandBody( byte* cmd, int length );
     void clearBuffer();
     void getAndSend();
@@ -176,10 +177,10 @@ Message SerialCommand::process( Message msg )
 }
 
 
-void SerialCommand::commandHandler(byte* bytes, int length){}
+void SerialCommand::commandHandler(byte* bytes, int length, Stream* activeSerial){}
 
 
-void SerialCommand::processCommand(int command)
+void SerialCommand::processCommand(byte command)
 {
 //  Commented out because causes corrupted data when sending serial to Android Bluetooth
 //  The necessary delay is now moved into method getCommandBody() 
@@ -209,8 +210,7 @@ void SerialCommand::processCommand(int command)
                 byte cmd[mw_cmds[i].dataLength];
                 int bytesRead = getCommandBody( cmd, mw_cmds[i].dataLength );
                 delay(1);
-                // (*mw_cmds[i].cb)( cmd, bytesRead );
-                mw_cmds[i].cbInstance->commandHandler(cmd, bytesRead);
+                mw_cmds[i].cbInstance->commandHandler(cmd, bytesRead, activeSerial);
                 break;
             }
             break;
@@ -492,8 +492,7 @@ void SerialCommand::bluetooth()
 int SerialCommand::getCommandBody( byte* cmd, int length )
 {
     // Loop until requested amount of bytes are received. Needed for BT latency
-    int i = 0;    
-    int timeout = COMMAND_TIMEOUT;
+    int i = 0, timeout = COMMAND_TIMEOUT;
     while( i < length ) {
         // Cannot simply use delay() because Android Bluetooth gets corrupted data
         while(activeSerial->available() == 0 && timeout > 0) {

@@ -58,7 +58,8 @@ void CANBus::begin()
     delay(50);
 }
 
-void CANBus::reset()//constructor for initializing can module.
+// Constructor for initializing can module.
+void CANBus::reset()
 {
     digitalWrite(_ss, LOW);
     delay(1);
@@ -68,7 +69,8 @@ void CANBus::reset()//constructor for initializing can module.
 }
 
 #ifdef OLD_BAUD
-bool CANBus::baudConfig(int bitRate)//sets bitrate for CAN node
+// Sets bitrate for CAN node
+bool CANBus::baudConfig(int bitRate)
 {
     byte config1, config2, config3;
 

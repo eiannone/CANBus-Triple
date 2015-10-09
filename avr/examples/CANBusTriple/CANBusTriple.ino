@@ -16,7 +16,7 @@
 #ifdef HAS_AUTOMATIC_VERSIONING
     #include "_Version.h"
 #else
-    #define BUILD_VERSION "0.6.0"
+    #define BUILD_VERSION "0.6.1"
 #endif
 // #define SLEEP_ENABLE
 
@@ -26,6 +26,7 @@ CANBus CANBus2(CAN2SELECT, CAN2RESET, 2, "Bus 2");
 CANBus CANBus3(CAN3SELECT, CAN3RESET, 3, "Bus 3");
 CANBus busses[] = { CANBus1, CANBus2, CANBus3 };
 
+#include "Middleware.h"
 #include "Settings.h"
 #include "AutoBaud.h"
 #include "SerialCommand.h"
@@ -46,7 +47,7 @@ ServiceCall *serviceCall = new ServiceCall( &writeQueue );
 Naptime *naptime = new Naptime(0x0472);
 #endif
 
-Middleware *activeMiddleware[] = {
+Middleware *activeMw[] = {
   serialCommand,
   // new ChannelSwap(),
   // serviceCall,
@@ -54,77 +55,77 @@ Middleware *activeMiddleware[] = {
   naptime,
 #endif
 };
-int activeMiddlewareLength = (int)( sizeof(activeMiddleware) / sizeof(activeMiddleware[0]) );
+int activeMwLength = (int)( sizeof(activeMw) / sizeof(activeMw[0]) );
 
 
 void setup()
 {
-  Settings::init();
-  delay(1);
+    Settings::init();
+    delay(1);
 
-  /*
-  *  Middleware Settings
-  */
+    /*
+    *  Middleware Settings
+    */
 #ifdef SLEEP_ENABLE
-  // Set a command callback to enable disable sleep (4E01 on 4E00 off)
-  serialCommand->registerCommand(0x4E, 1, naptime);
+    // Set a command callback to enable disable sleep (4E01 on 4E00 off)
+    serialCommand->registerCommand(0x4E, 1, naptime);
 #endif  
   serviceCall->setFilterPids();
 
-  Serial.begin( 115200 ); // USB
-  Serial1.begin( 57600 ); // UART
+    Serial.begin( 115200 ); // USB
+    Serial1.begin( 57600 ); // UART
 
-  /*
-  *  Power LED
-  */
-  DDRE |= B00000100;
-  PORTE |= B00000100;
+    /*
+    *  Power LED
+    */
+    DDRE |= B00000100;
+    PORTE |= B00000100;
 
-  /*
-  *  BLE112 Init
-  */
-  pinMode( BT_SLEEP, OUTPUT );
-  digitalWrite( BT_SLEEP, HIGH ); // Keep BLE112 Awake
+    /*
+    *  BLE112 Init
+    */
+    pinMode( BT_SLEEP, OUTPUT );
+    digitalWrite( BT_SLEEP, HIGH ); // Keep BLE112 Awake
 
-  /*
-  *  Boot LED
-  */
-  pinMode( BOOT_LED, OUTPUT );
+    /*
+    *  Boot LED
+    */
+    pinMode( BOOT_LED, OUTPUT );
 
-  pinMode( CAN1INT_D, INPUT );
-  pinMode( CAN2INT_D, INPUT );
-  pinMode( CAN3INT_D, INPUT );
-  pinMode( CAN1RESET, OUTPUT );
-  pinMode( CAN2RESET, OUTPUT );
-  pinMode( CAN3RESET, OUTPUT );
-  pinMode( CAN1SELECT, OUTPUT );
-  pinMode( CAN2SELECT, OUTPUT );
-  pinMode( CAN3SELECT, OUTPUT );
+    pinMode( CAN1INT_D, INPUT );
+    pinMode( CAN2INT_D, INPUT );
+    pinMode( CAN3INT_D, INPUT );
+    pinMode( CAN1RESET, OUTPUT );
+    pinMode( CAN2RESET, OUTPUT );
+    pinMode( CAN3RESET, OUTPUT );
+    pinMode( CAN1SELECT, OUTPUT );
+    pinMode( CAN2SELECT, OUTPUT );
+    pinMode( CAN3SELECT, OUTPUT );
 
-  digitalWrite(CAN1RESET, LOW);
-  digitalWrite(CAN2RESET, LOW);
-  digitalWrite(CAN3RESET, LOW);
+    digitalWrite(CAN1RESET, LOW);
+    digitalWrite(CAN2RESET, LOW);
+    digitalWrite(CAN3RESET, LOW);
 
 
-  // Setup CAN Busses
-  for (int b = 0; b < 3; b++) {
-    busses[b].begin();
-    busses[b].setClkPre(1);
-    busses[b].baudConfig(cbt_settings.busCfg[b].baud);
-    busses[b].setRxInt(true);
-    busses[b].bitModify(RXB0CTRL, 0x04, 0x04); // Set buffer rollover enabled
-    busses[b].disableFilters();
-    busses[b].setMode(cbt_settings.busCfg[b].mode);
-  }
+    // Setup CAN Busses
+    for (int b = 0; b < 3; b++) {
+        busses[b].begin(); // Resets and puts bus in CONTROL mode
+        busses[b].setClkPre(1);
+        busses[b].baudConfig(cbt_settings.busCfg[b].baud);
+        busses[b].setRxInt(true);
+        busses[b].bitModify(RXB0CTRL, 0x04, 0x04); // Set buffer rollover enabled
+        busses[b].disableFilters();
+        busses[b].setMode(cbt_settings.busCfg[b].mode);
+    }
 
-  for(int l = 0; l < 5; l++) {
-    digitalWrite( BOOT_LED, HIGH );
-    delay(50);
-    digitalWrite( BOOT_LED, LOW );
-    delay(50);
-  }
+    for(int l = 0; l < 5; l++) {
+        digitalWrite( BOOT_LED, HIGH );
+        delay(50);
+        digitalWrite( BOOT_LED, LOW );
+        delay(50);
+    }
 
-  // wdt_enable(WDTO_1S);
+    // wdt_enable(WDTO_1S);
 }
 
 
@@ -133,33 +134,31 @@ void setup()
 */
 void loop() 
 {
-  // Run all middleware ticks
-  for(int i = 0; i <= activeMiddlewareLength - 1; i++)
-    activeMiddleware[i]->tick();
+    // Run all middleware ticks
+    for(int i = 0; i <= activeMwLength - 1; i++) activeMw[i]->tick();
 
-  if ( digitalRead(CAN1INT_D) == 0 ) readBus(CANBus1);
-  if ( digitalRead(CAN2INT_D) == 0 ) readBus(CANBus2);
-  if ( digitalRead(CAN3INT_D) == 0 ) readBus(CANBus3);
+    if (digitalRead(CAN1INT_D) == 0) readBus(CANBus1);
+    if (digitalRead(CAN2INT_D) == 0) readBus(CANBus2);
+    if ( digitalRead(CAN3INT_D) == 0 ) readBus(CANBus3);
 
-  // Process received CAN message through middleware
-  if (!readQueue.isEmpty()) {
-    Message msg = readQueue.pop();
-    for(int i = 0; i <= activeMiddlewareLength - 1; i++) msg = activeMiddleware[i]->process(msg);
-    if (msg.dispatch && !writeQueue.isFull()) writeQueue.push(msg);
-  }
+    // Process received CAN message through middleware
+    if (!readQueue.isEmpty()) {
+        Message msg = readQueue.pop();
+        for(int i = 0; i < activeMwLength; i++) msg = activeMw[i]->process(msg);
+        if (msg.dispatch && !writeQueue.isFull()) writeQueue.push(msg);
+    }
 
-  boolean error = false;
-  while(!writeQueue.isEmpty() && !error) {
+    boolean error = false;
+    while(!writeQueue.isEmpty() && !error) {
+        Message msg = writeQueue.pop();
+        error = !sendMessage(msg, busses[msg.busId - 1]);
+        delay(2);
+        // When TX Failure, add back to queue
+        if (error) writeQueue.push(msg);
+    }
 
-    Message msg = writeQueue.pop();
-    error = !sendMessage(msg, busses[msg.busId - 1]);
-
-    // When TX Failure, add back to queue
-    if (error) writeQueue.push(msg);
-  }
-
-  // Pet the dog
-  // wdt_reset();
+    // Pet the dog
+    // wdt_reset();
 
 } // End loop()
 
@@ -169,17 +168,17 @@ void loop()
 */
 boolean sendMessage( Message msg, CANBus bus )
 {
-  if( msg.dispatch == false ) return true;
+    if( msg.dispatch == false ) return true;
 
-  int ch = bus.getNextTxBuffer();
-  if (ch < 0 || ch > 2) return false; // All TX buffers full
+    int ch = bus.getNextTxBuffer();
+    if (ch < 0 || ch > 2) return false; // All TX buffers full
 
-  digitalWrite(BOOT_LED, HIGH);
-  bus.loadFullFrame(ch, msg.length, msg.frame_id, msg.frame_data );
-  bus.transmitBuffer(ch);
-  digitalWrite(BOOT_LED, LOW);
+    digitalWrite(BOOT_LED, HIGH);
+    bus.loadFullFrame(ch, msg.length, msg.frame_id, msg.frame_data );
+    bus.transmitBuffer(ch);
+    digitalWrite(BOOT_LED, LOW);
 
-  return true;
+    return true;
 }
 
 

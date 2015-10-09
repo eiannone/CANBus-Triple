@@ -15,7 +15,7 @@ class ServiceCall : public Middleware
     void tick();
     Message process(Message msg);
     ServiceCall( QueueArray<Message> *q );
-    void commandHandler(byte* bytes, int length);
+    void commandHandler(byte* bytes, int length, Stream* activeSerial);
     unsigned long lastServiceCallSent;
     void sendNextServiceCall( struct pid pid[] );
     void setServiceIndex(byte i);
@@ -139,7 +139,7 @@ Message ServiceCall::process(Message msg){
   return msg;
 }
 
-void ServiceCall::commandHandler(byte* bytes, int length){}
+void ServiceCall::commandHandler(byte* bytes, int length, Stream* activeSerial){}
 
 
 byte ServiceCall::getServiceIndex()

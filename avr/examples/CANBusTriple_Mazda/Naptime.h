@@ -16,7 +16,7 @@ public:
     Message process( Message msg );
     void reset();
     static void handleInterrupt();
-    bool enabled;
+    boolean enabled;
     unsigned long timer;
     unsigned short resetId;
     void commandHandler(byte* bytes, int length);
