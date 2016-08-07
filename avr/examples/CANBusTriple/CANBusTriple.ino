@@ -16,7 +16,7 @@
 #ifdef HAS_AUTOMATIC_VERSIONING
     #include "_Version.h"
 #else
-    #define BUILD_VERSION "0.6.1"
+    #define BUILD_VERSION "0.7.0"
 #endif
 // #define SLEEP_ENABLE
 
@@ -109,7 +109,7 @@ void setup()
 
     // Setup CAN Busses
     for (int b = 0; b < 3; b++) {
-        busses[b].begin(); // Resets and puts bus in CONTROL mode
+        busses[b].begin(); // Resets bus and puts it in CONTROL mode
         busses[b].setClkPre(1);
         busses[b].baudConfig(cbt_settings.busCfg[b].baud);
         busses[b].setRxInt(true);
