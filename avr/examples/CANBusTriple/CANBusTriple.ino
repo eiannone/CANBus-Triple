@@ -12,13 +12,17 @@
 #include <Message.h>
 #include <QueueArray.h>
 
+
+// #define SLEEP_ENABLE
+#define INCLUDE_DEFAULT_EEPROM
+
+
 #define BUILDNAME "CANBus Triple"
 #ifdef HAS_AUTOMATIC_VERSIONING
     #include "_Version.h"
 #else
     #define BUILD_VERSION "0.7.0"
 #endif
-// #define SLEEP_ENABLE
 
 
 CANBus CANBus1(CAN1SELECT, CAN1RESET, 1, "Bus 1");
@@ -139,7 +143,7 @@ void loop()
 
     if (digitalRead(CAN1INT_D) == 0) readBus(CANBus1);
     if (digitalRead(CAN2INT_D) == 0) readBus(CANBus2);
-    if ( digitalRead(CAN3INT_D) == 0 ) readBus(CANBus3);
+    if (digitalRead(CAN3INT_D) == 0) readBus(CANBus3);
 
     // Process received CAN message through middleware
     if (!readQueue.isEmpty()) {
@@ -176,7 +180,7 @@ boolean sendMessage( Message msg, CANBus bus )
     digitalWrite(BOOT_LED, HIGH);
     bus.loadFullFrame(ch, msg.length, msg.frame_id, msg.frame_data );
     bus.transmitBuffer(ch);
-    digitalWrite(BOOT_LED, LOW);
+  digitalWrite( BOOT_LED, LOW );
 
     return true;
 }
