@@ -57,7 +57,6 @@ Middleware *activeMiddleware[] = {
   new ChannelSwap(),
   mazdaLed,
   serviceCall,
-  #ifdef SLEEP_ENABLE
 #ifdef SLEEP_ENABLE
   naptime,
 #endif

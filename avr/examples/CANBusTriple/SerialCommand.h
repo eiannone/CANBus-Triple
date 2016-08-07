@@ -19,7 +19,7 @@ System info and EEPROM
 0x01 0x10 0x03       Print bus 3 debug to serial
 0x01 0x16            Reboot to bootloader
 
- 
+
 Send CAN Packet
 ---------------
 Cmd    Bus id  PID  Data 0-7                 Length
@@ -492,8 +492,8 @@ void SerialCommand::bluetooth()
 int SerialCommand::getCommandBody( byte* cmd, int length )
 {
     // Loop until requested amount of bytes are received. Needed for BT latency
-    int i = 0;    
-    int i = 0, timeout = COMMAND_TIMEOUT;
+    int i = 0;
+    int timeout = COMMAND_TIMEOUT;
     while( i < length ) {
         // Cannot simply use delay() because Android Bluetooth gets corrupted data
         while(activeSerial->available() == 0 && timeout > 0) {

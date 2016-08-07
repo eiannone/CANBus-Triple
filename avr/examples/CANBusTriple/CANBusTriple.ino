@@ -16,7 +16,6 @@
 // #define SLEEP_ENABLE
 #define INCLUDE_DEFAULT_EEPROM
 
-
 #define BUILDNAME "CANBus Triple"
 #ifdef HAS_AUTOMATIC_VERSIONING
     #include "_Version.h"
@@ -180,7 +179,7 @@ boolean sendMessage( Message msg, CANBus bus )
     digitalWrite(BOOT_LED, HIGH);
     bus.loadFullFrame(ch, msg.length, msg.frame_id, msg.frame_data );
     bus.transmitBuffer(ch);
-  digitalWrite( BOOT_LED, LOW );
+    digitalWrite(BOOT_LED, LOW );
 
     return true;
 }

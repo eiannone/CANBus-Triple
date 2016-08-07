@@ -10,8 +10,6 @@
 class Naptime : public Middleware
 {
 public:
-    Naptime(int resetMsgId);
-    Naptime();    
     void tick();
     Message process( Message msg );
     void reset();
@@ -19,15 +17,14 @@ public:
     boolean enabled;
     unsigned long timer;
     unsigned short resetId;
+    Naptime(int resetMsgId) : enabled(true), timer(0), resetId(resetMsgId) {};
+    Naptime() : Naptime(0) {};
+	
     void commandHandler(byte* bytes, int length, Stream* activeSerial);
 private:
 
 };
 
-
-Naptime::Naptime(int resetMsgId) : enabled(true), timer(0), resetId(resetMsgId) {}
-
-Naptime::Naptime() : Naptime(0) {}
 
 void Naptime::commandHandler(byte* bytes, int length, Stream* activeSerial)
 {
