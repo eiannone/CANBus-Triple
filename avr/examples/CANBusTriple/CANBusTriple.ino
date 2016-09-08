@@ -178,14 +178,14 @@ void loop()
 */
 bool sendMessage( Message msg, CANBus * bus )
 {
-    int ch = bus->getNextTxBuffer();
-    if (ch < 0 || ch > 2) return false; // All TX buffers full
+    int txBuf = bus->getNextTxBuffer();
+    if (txBuf < 0 || txBuf > 2) return false; // All TX buffers full
 
     digitalWrite(BOOT_LED, HIGH);
-    bus->loadFullFrame(ch, msg.length, msg.frame_id, msg.frame_data );
-    bus->transmitBuffer(ch);
+    bus->loadFullFrame(txBuf, msg.length, msg.frame_id, msg.frame_data );
+    bus->transmitBuffer(txBuf);
     digitalWrite(BOOT_LED, LOW );
-
+    delay(1);
     return true;
 }
 

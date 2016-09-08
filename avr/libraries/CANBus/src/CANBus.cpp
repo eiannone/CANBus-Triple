@@ -230,9 +230,9 @@ int CANBus::getNextTxBuffer()
 {
     byte stat = this->readStatus();
 
-    if ( (stat & 0x4) != 0x4 )   return 0;
-    if ( (stat & 0x10) != 0x10 ) return 1;
-    if ( (stat & 0x40) != 0x40 ) return 2;
+    if ( (stat & 0x04) == 0 ) return 0;
+    if ( (stat & 0x10) == 0 ) return 1;
+    if ( (stat & 0x40) == 0 ) return 2;
     return -1;
 }
 
@@ -429,6 +429,7 @@ void CANBus::readFullFrame(byte buffer_id, byte* length_out, byte *data_out, uns
     unsigned short id_h, id_l;
 
     digitalWrite(_ss, LOW);
+    // "Read RX buffer" instruction
     SPI.transfer((buffer_id == 0)? READ_RX_BUF_0_ID : READ_RX_BUF_1_ID);
     id_h = (unsigned short) SPI.transfer(0xFF); //id high
     id_l = (unsigned short) SPI.transfer(0xFF); //id low
@@ -443,7 +444,22 @@ void CANBus::readFullFrame(byte buffer_id, byte* length_out, byte *data_out, uns
     (*id_out) = ((id_h << 3) + ((id_l & 0xE0) >> 5)); // Repack identifier
 }
 
+/*
+Status flags.
+The CANINTF register contains the corresponding interrupt flag bit for each interrupt source.
 
+B0 = CANINTF.RX0IF    Message received in RXB0
+B1 = CANINTF.RX1IF    Message received in RXB1
+
+B2 = TXB0CNTRL.TXREQ  Transmit buffer 0 has pending transmission
+B3 = CANINTF.TX0IF    Transmit buffer 0 is empty
+
+B4 = TXB1CNTRL.TXREQ  Transmit buffer 1 has pending transmission
+B5 = CANINTF.TX1IF    Transmit buffer 1 is empty
+
+B6 = TXB2CNTRL.TXREQ  Transmit buffer 2 has pending transmission
+B7 = CANINTF.TX2IF    Transmit buffer 2 is empty
+*/
 byte CANBus::readStatus()
 {
     byte retVal;

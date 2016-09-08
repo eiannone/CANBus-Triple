@@ -7,16 +7,13 @@
 
 class Middleware
 {
-  public:
-    virtual void tick();
-    virtual Message process( Message msg );
-    virtual void commandHandler(byte* bytes, int length);
-    // boolean enabled;
+public:
+    virtual void tick() {};
+    virtual Message process(Message msg) { return msg; };
+    virtual void commandHandler(byte* bytes, int length) {};
     Middleware(){};
     ~Middleware(){};
 };
-
-Message Middleware::process( Message msg ){}
 
 #endif
 

@@ -76,7 +76,6 @@ TODO: Implement this ^^^
 struct middleware_command {
     byte command;
     int dataLength;
-    // void (Middleware::*cb)(byte[], int);
     Middleware *cbInstance;
 };
 
@@ -86,8 +85,7 @@ class SerialCommand : public Middleware
 public:
     SerialCommand( MessageQueue *q );
     void tick();
-    Message process( Message msg );
-    void commandHandler(byte* bytes, int length);
+    Message process(Message msg);
     Stream* activeSerial;
     void printMessageToSerial(Message msg);
     void registerCommand(byte commandId, int dataLength, Middleware *cbInstance);
@@ -99,7 +97,7 @@ private:
     void printChannelDebug();
     void printChannelDebug(CANBus);
     void processCommand(byte command);
-    int  getCommandBody( byte* cmd, int length );
+    int  getCommandBody(byte* cmd, int length);
     void clearBuffer();
     void getAndSend();
     void printSystemDebug();
@@ -127,7 +125,7 @@ int byteCount = 0;
 struct middleware_command mw_cmds[MAX_MW_CALLBACKS];
 
 
-SerialCommand::SerialCommand( MessageQueue *q )
+SerialCommand::SerialCommand(MessageQueue *q )
 {
     mainQueue = q;
 
@@ -170,14 +168,11 @@ void SerialCommand::tick()
 }
 
 
-Message SerialCommand::process( Message msg )
+Message SerialCommand::process(Message msg)
 {
     if (busLogEnabled & (0x1 << (msg.busId - 1))) printMessageToSerial(msg);
     return msg;
 }
-
-
-void SerialCommand::commandHandler(byte* bytes, int length){}
 
 
 void SerialCommand::processCommand(byte command)
